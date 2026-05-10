@@ -5,9 +5,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
 
-extern float glob_temperature;
-extern float glob_humidity;
+struct SensorData {
+    float temperature;
+    float humidity;
+};
+
+extern QueueHandle_t xSensorQueue;
+extern SemaphoreHandle_t xSensorQueueMutex;
+extern SemaphoreHandle_t xSemaphoreNewTemp;
+extern SemaphoreHandle_t xSemaphoreNewHumi;
 
 extern String WIFI_SSID;
 extern String WIFI_PASS;
@@ -17,4 +25,7 @@ extern String CORE_IOT_PORT;
 
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+
+bool readLatestSensorData(SensorData *data, TickType_t timeoutTicks);
+
 #endif

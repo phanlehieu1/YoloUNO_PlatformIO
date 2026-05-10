@@ -52,10 +52,14 @@ void tiny_ml_task(void *pvParameters)
     while (1)
     {
 
-        // Prepare input data (e.g., sensor readings)
-        // For a simple example, let's assume a single float input
-        input->data.f[0] = glob_temperature;
-        input->data.f[1] = glob_humidity;
+        SensorData data;
+        if (!readLatestSensorData(&data, pdMS_TO_TICKS(100))) {
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
+        }
+
+        input->data.f[0] = data.temperature;
+        input->data.f[1] = data.humidity;
 
         // Run inference
         TfLiteStatus invoke_status = interpreter->Invoke();

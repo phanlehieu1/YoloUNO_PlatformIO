@@ -13,8 +13,8 @@
 
 // String mainPage()
 // {
-//   float temperature = glob_temperature;
-//   float humidity = glob_humidity;
+//   float temperature = 0;
+//   float humidity = 0;
 //   String led1 = led1_state ? "ON" : "OFF";
 //   String led2 = led2_state ? "ON" : "OFF";
 
@@ -302,8 +302,8 @@
 
 // void handleSensors()
 // {
-//   float t = glob_temperature;
-//   float h = glob_humidity;
+//   float t = 0;
+//   float h = 0;
 //   String json = "{\"temp\":" + String(t) + ",\"hum\":" + String(h) + "}";
 //   server.send(200, "application/json", json);
 // }

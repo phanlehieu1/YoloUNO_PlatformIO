@@ -1,26 +1,67 @@
 #include "neo_blinky.h"
 
+namespace
+{
+    uint32_t humidityColor(Adafruit_NeoPixel &strip, float humidity)
+    {
+        if (humidity < HUMIDITY_DRY_MAX) {
+            return strip.Color(255, 180, 0);
+        }
 
-void neo_blinky(void *pvParameters){
+        if (humidity < HUMIDITY_COMFORT_MAX) {
+            return strip.Color(0, 255, 0);
+        }
 
+        return strip.Color(0, 0, 255);
+    }
+
+    const char *humidityLabel(float humidity)
+    {
+        if (humidity < HUMIDITY_DRY_MAX) {
+            return "DRY amber";
+        }
+
+        if (humidity < HUMIDITY_COMFORT_MAX) {
+            return "COMFORT green";
+        }
+
+        return "HUMID blue";
+    }
+}
+
+void neo_blinky(void *pvParameters)
+{
     Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRB + NEO_KHZ800);
     strip.begin();
-    // Set all pixels to off to start
     strip.clear();
     strip.show();
 
-    while(1) {                          
-        strip.setPixelColor(0, strip.Color(255, 0, 0)); // Set pixel 0 to red
-        strip.show(); // Update the strip
+    uint32_t currentColor = strip.Color(0, 0, 0);
 
-        // Wait for 500 milliseconds
-        vTaskDelay(500);
+    while (1) {
+        // The humidity semaphore makes this task sleep until the sensor task publishes a new condition.
+        if (xSemaphoreTake(xSemaphoreNewHumi, portMAX_DELAY) != pdTRUE) {
+            continue;
+        }
 
-        // Set the pixel to off
-        strip.setPixelColor(0, strip.Color(0, 0, 0)); // Turn pixel 0 off
-        strip.show(); // Update the strip
+        SensorData data;
+        if (!readLatestSensorData(&data, pdMS_TO_TICKS(100))) {
+            continue;
+        }
 
-        // Wait for another 500 milliseconds
-        vTaskDelay(500);
+        uint32_t nextColor = humidityColor(strip, data.humidity);
+        if (nextColor != currentColor) {
+            currentColor = nextColor;
+            strip.setPixelColor(0, currentColor);
+            strip.show();
+        }
+
+        Serial.printf("[NEO] Humidity %.1f%% -> %s (<%.0f dry, %.0f-%.0f comfort, >=%.0f humid)\n",
+                      data.humidity,
+                      humidityLabel(data.humidity),
+                      HUMIDITY_DRY_MAX,
+                      HUMIDITY_DRY_MAX,
+                      HUMIDITY_COMFORT_MAX,
+                      HUMIDITY_COMFORT_MAX);
     }
 }

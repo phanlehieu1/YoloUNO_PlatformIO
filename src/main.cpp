@@ -17,6 +17,21 @@
 void setup()
 {
   Serial.begin(115200);
+
+  xSensorQueue = xQueueCreate(1, sizeof(SensorData));
+  xSensorQueueMutex = xSemaphoreCreateMutex();
+  xSemaphoreNewTemp = xSemaphoreCreateBinary();
+  xSemaphoreNewHumi = xSemaphoreCreateBinary();
+  xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+
+  if (xSensorQueue == NULL || xSensorQueueMutex == NULL || xSemaphoreNewTemp == NULL ||
+      xSemaphoreNewHumi == NULL || xBinarySemaphoreInternet == NULL) {
+    Serial.println("Failed to create FreeRTOS synchronization handles");
+    while (1) {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+  }
+
   check_info_File(0);
 
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);

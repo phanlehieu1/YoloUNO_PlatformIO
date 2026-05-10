@@ -117,14 +117,12 @@ void coreiot_task(void *pvParameters){
         }
         client.loop();
 
-        // Sample payload, publish to 'v1/devices/me/telemetry'
-        String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
-        
-        client.publish("v1/devices/me/telemetry", payload.c_str());
-
-
-        
-        Serial.println("Published payload: " + payload);
+        SensorData data;
+        if (readLatestSensorData(&data, pdMS_TO_TICKS(100))) {
+            String payload = "{\"temperature\":" + String(data.temperature) +  ",\"humidity\":" + String(data.humidity) + "}";
+            client.publish("v1/devices/me/telemetry", payload.c_str());
+            Serial.println("Published payload: " + payload);
+        }
         vTaskDelay(10000);  // Publish every 10 seconds
     }
 }
