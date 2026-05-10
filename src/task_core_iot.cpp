@@ -1,97 +1,94 @@
-
 #include "task_core_iot.h"
+#include <WiFi.h>
+#include <ThingsBoard.h>
+#include <Arduino_MQTT_Client.h>
 
-constexpr uint32_t MAX_MESSAGE_SIZE = 1024U;
+#include "tinyml.h"
 
-WiFiClient wifiClient;
-Arduino_MQTT_Client mqttClient(wifiClient);
-ThingsBoard tb(mqttClient, MAX_MESSAGE_SIZE);
-
-constexpr char LED_STATE_ATTR[] = "ledState";
-
-volatile int ledMode = 0;
-volatile bool ledState = false;
-
-constexpr uint16_t BLINKING_INTERVAL_MS_MIN = 10U;
-constexpr uint16_t BLINKING_INTERVAL_MS_MAX = 60000U;
-volatile uint16_t blinkingInterval = 1000U;
-
-constexpr int16_t telemetrySendInterval = 10000U;
-
-constexpr std::array<const char *, 2U> SHARED_ATTRIBUTES_LIST = {
-    LED_STATE_ATTR,
-};
-
-void processSharedAttributes(const Shared_Attribute_Data &data)
-{
-    for (auto it = data.begin(); it != data.end(); ++it)
-    {
+void coreiot_task(void *pvParameters) {
+    // 1. Wait until Wi-Fi connects (Signaled by task_wifi)
+    Serial.println("[CoreIOT] Waiting for internet connection semaphore...");
+    while (xSemaphoreTake(internetConnectedSemaphore(), portMAX_DELAY) != pdTRUE) {
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
-}
+    // Give it back so other tasks aren't blocked if they check it.
+    xSemaphoreGive(internetConnectedSemaphore());
 
-RPC_Response setLedSwitchValue(const RPC_Data &data)
-{
-    Serial.println("Received Switch state");
-    bool newState = data;
-    Serial.print("Switch state change: ");
-    Serial.println(newState);
-    return RPC_Response("setLedSwitchValue", newState);
-}
+    Serial.println("[CoreIOT] Internet connected. Starting task loop...");
 
-const std::array<RPC_Callback, 1U> callbacks = {
-    RPC_Callback{"setLedSwitchValue", setLedSwitchValue}};
+    WiFiClient wifiClient;
+    Arduino_MQTT_Client mqttClient(wifiClient);
+    ThingsBoard tb(mqttClient, 1024);
 
-const Shared_Attribute_Callback attributes_callback(&processSharedAttributes, SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend());
-const Attribute_Request_Callback attribute_shared_request_callback(&processSharedAttributes, SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend());
+    uint32_t lastSendMs = 0;
+    const uint32_t intervalMs = 10000;
 
-void CORE_IOT_sendata(String mode, String feed, String data)
-{
-    if (mode == "attribute")
-    {
-        tb.sendAttributeData(feed.c_str(), data);
-    }
-    else if (mode == "telemetry")
-    {
-        float value = data.toFloat();
-        tb.sendTelemetryData(feed.c_str(), value);
-    }
-}
+    while (1) {
+        // Always get fresh config in case it was updated via web portal
+        DeviceConfig config = getDeviceConfig();
+        String server = config.coreIotServer; server.trim();
+        String token = config.coreIotToken; token.trim();
+        int port = config.coreIotPort.toInt();
+        if (port <= 0) port = 1883;
 
-void CORE_IOT_reconnect()
-{
-    // Read config via RTOS accessor (no global variables)
-    const DeviceConfig config = getDeviceConfig();
-
-    if (!tb.connected())
-    {
-        if (!tb.connect(config.coreIotServer.c_str(), config.coreIotToken.c_str(), config.coreIotPort.toInt()))
-        {
-            return;
+        if (token.isEmpty() || server.isEmpty()) {
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
         }
 
-        tb.sendAttributeData("macAddress", WiFi.macAddress().c_str());
-
-        Serial.println("Subscribing for RPC...");
-        if (!tb.RPC_Subscribe(callbacks.cbegin(), callbacks.cend()))
-        {
-            return;
+        // 3. Handle Connection
+        if (!tb.connected()) {
+            // Unique Client ID to avoid "duplicate connection" kicks
+            String clientId = "YoloUNO-" + WiFi.macAddress();
+            clientId.replace(":", "");
+            
+            Serial.printf("[CoreIOT] Connecting to %s:%d with token %s...\n", server.c_str(), port, token.c_str());
+            if (!tb.connect(server.c_str(), token.c_str(), port, clientId.c_str())) {
+                Serial.println("[CoreIOT] Connection failed. Retrying in 5s...");
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                continue;
+            }
+            Serial.println("[CoreIOT] Connected successfully!");
+            
+            // Send initial attributes
+            tb.sendAttributeData("macAddress", WiFi.macAddress().c_str());
+            tb.sendAttributeData("localIp", WiFi.localIP().toString().c_str());
         }
 
-        if (!tb.Shared_Attributes_Subscribe(attributes_callback))
-        {
-            return;
+        // 4. Periodic Data Publishing
+        if (millis() - lastSendMs >= intervalMs) {
+            lastSendMs = millis();
+            
+            SensorData data;
+            // Accessor helper from global.h
+            if (readLatestSensorData(&data, 0)) {
+                // Get latest TinyML results
+                TinyMLState mlState = getTinyMLState();
+
+                // Core Telemetry
+                tb.sendTelemetryData("temperature", data.temperature);
+                tb.sendTelemetryData("humidity", data.humidity);
+                
+                // Anomaly Telemetry
+                tb.sendTelemetryData("anomaly_score", mlState.lastScore);
+                tb.sendTelemetryData("is_anomaly", mlState.isAnomaly);
+                
+                // Location Telemetry (User's location)
+                tb.sendTelemetryData("lat", 10.772175109674038);
+                tb.sendTelemetryData("long", 106.65789107082472);
+                
+                Serial.printf("[CoreIOT] Published -> T:%.1f, H:%.1f, Score:%.4f, Anomaly:%s\n", 
+                              data.temperature, data.humidity, mlState.lastScore, 
+                              mlState.isAnomaly ? "YES" : "NO");
+            } else {
+                Serial.println("[CoreIOT] Sensor data not ready yet.");
+            }
         }
 
-        Serial.println("Subscribe done");
-
-        if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
-        {
-            return;
-        }
-        tb.sendAttributeData("localIp", WiFi.localIP().toString().c_str());
-    }
-    else if (tb.connected())
-    {
+        // 5. Keep alive and handle callbacks (if any)
         tb.loop();
+        
+        // Yield to other tasks
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
