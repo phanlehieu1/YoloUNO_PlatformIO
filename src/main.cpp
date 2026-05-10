@@ -21,8 +21,20 @@ void setup()
   // Create all RTOS resources (queues, mutexes, semaphores) before any task starts.
   initRtosResources();
 
+  // 1. Initialize LittleFS and load saved config
   check_info_File(0);
 
+  // 2. ALWAYS start AP + Web Server immediately so the config portal works
+  //    If there are WiFi credentials, also start STA in the background.
+  if (hasWifiCredentials()) {
+    initAPSTA();   // AP + STA (non-blocking)
+  } else {
+    startAP();     // AP only
+  }
+  Webserver_reconnect();  // Start web server RIGHT AWAY
+  Serial.println("[Setup] AP and Web Server are READY.");
+
+  // 3. Create RTOS tasks
   // Task 1: LED blinks at speed determined by temperature condition
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
 
@@ -41,23 +53,13 @@ void setup()
 
   // CoreIOT: publishes telemetry over MQTT
   xTaskCreate(coreiot_task, "CoreIOT Task", 4096, NULL, 2, NULL);
-
-  // xTaskCreate(main_server_task, "Task Main Server", 8192, NULL, 2, NULL);
-  // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
 }
 
 void loop()
 {
-  if (check_info_File(1))
-  {
-    if (!Wifi_reconnect())
-    {
-      Webserver_stop();
-    }
-    else
-    {
-      //CORE_IOT_reconnect();
-    }
+  // Just poll WiFi status (never blocks, never resets AP)
+  if (hasWifiCredentials()) {
+    Wifi_reconnect();
   }
   Webserver_reconnect();
 }

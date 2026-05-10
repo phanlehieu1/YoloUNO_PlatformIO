@@ -1,5 +1,7 @@
 #include "task_wifi.h"
 
+static bool staConnected = false;
+
 void startAP()
 {
     WiFi.mode(WIFI_AP);
@@ -8,47 +10,40 @@ void startAP()
     Serial.println(WiFi.softAPIP());
 }
 
-void startSTA()
+void initAPSTA()
 {
+    // Called once from setup() — starts AP immediately so the config portal
+    // is accessible, then kicks off STA connection in the background.
     const DeviceConfig config = getDeviceConfig();
-    if (config.wifiSsid.isEmpty())
-    {
-        vTaskDelete(NULL);
-    }
 
-    // Always keep AP mode alive so configuration portal is always accessible
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(String(SSID_AP), String(PASS_AP));
-    Serial.print("Configuration AP IP: ");
+    Serial.print("AP+STA IP: ");
     Serial.println(WiFi.softAPIP());
 
-    if (config.wifiPass.isEmpty())
+    if (!config.wifiSsid.isEmpty())
     {
-        WiFi.begin(config.wifiSsid.c_str());
+        WiFi.setAutoReconnect(true);
+        if (config.wifiPass.isEmpty())
+            WiFi.begin(config.wifiSsid.c_str());
+        else
+            WiFi.begin(config.wifiSsid.c_str(), config.wifiPass.c_str());
+        Serial.println("[WiFi] STA connecting in background...");
     }
-    else
-    {
-        WiFi.begin(config.wifiSsid.c_str(), config.wifiPass.c_str());
-    }
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-    Serial.print("Station IP: ");
-    Serial.println(WiFi.localIP());
-
-    // This semaphore releases network-dependent tasks (CoreIOT) after Wi-Fi connects.
-    xSemaphoreGive(internetConnectedSemaphore());
 }
 
 bool Wifi_reconnect()
 {
-    const wl_status_t status = WiFi.status();
-    if (status == WL_CONNECTED)
+    if (WiFi.status() == WL_CONNECTED)
     {
+        if (!staConnected)
+        {
+            staConnected = true;
+            Serial.print("Station IP: ");
+            Serial.println(WiFi.localIP());
+            xSemaphoreGive(internetConnectedSemaphore());
+        }
         return true;
     }
-    startSTA();
     return false;
 }

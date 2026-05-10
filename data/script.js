@@ -103,7 +103,7 @@ function toggleDevice(gpio, devId) {
     let statusStr = deviceStates[devId] ? "ON" : "OFF";
     
     let btn = document.getElementById('btn-' + devId);
-    btn.innerText = `Device ${devId === 'dev1' ? '1 (Pin 15)' : '2 (Pin 16)'}: ${statusStr}`;
+    btn.innerText = `Device ${devId === 'dev1' ? '1 (Pin 47)' : '2 (Pin 38)'}: ${statusStr}`;
     btn.style.background = deviceStates[devId] ? "var(--green)" : "var(--panel)";
 
     let controlData = {
