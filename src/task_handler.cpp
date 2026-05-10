@@ -1,6 +1,132 @@
 #include <task_handler.h>
 #include <task_webserver.h>
 
+namespace {
+constexpr int kDefaultActuatorGpio = 48;
+
+String normalizeStatus(String status) {
+    status.trim();
+    status.replace("\"", "");
+
+    if (status.equalsIgnoreCase("ON") || status.equalsIgnoreCase("TRUE") || status == "1") {
+        return "ON";
+    }
+    if (status.equalsIgnoreCase("OFF") || status.equalsIgnoreCase("FALSE") || status == "0") {
+        return "OFF";
+    }
+    return status;
+}
+
+String rpcParamToStatus(const JsonVariantConst &data) {
+    if (data.is<bool>()) {
+        return data.as<bool>() ? "ON" : "OFF";
+    }
+    if (data.is<int>()) {
+        return data.as<int>() != 0 ? "ON" : "OFF";
+    }
+    if (data.is<const char *>()) {
+        return normalizeStatus(String(data.as<const char *>()));
+    }
+    if (data.is<String>()) {
+        return normalizeStatus(data.as<String>());
+    }
+    if (data.is<JsonObjectConst>()) {
+        JsonObjectConst obj = data.as<JsonObjectConst>();
+        if (obj.containsKey("status")) {
+            if (obj["status"].is<bool>()) {
+                return obj["status"].as<bool>() ? "ON" : "OFF";
+            }
+            if (obj["status"].is<int>()) {
+                return obj["status"].as<int>() != 0 ? "ON" : "OFF";
+            }
+            if (obj["status"].is<const char *>()) {
+                return normalizeStatus(String(obj["status"].as<const char *>()));
+            }
+            return normalizeStatus(obj["status"].as<String>());
+        }
+        if (obj.containsKey("params")) {
+            if (obj["params"].is<bool>()) {
+                return obj["params"].as<bool>() ? "ON" : "OFF";
+            }
+            if (obj["params"].is<int>()) {
+                return obj["params"].as<int>() != 0 ? "ON" : "OFF";
+            }
+            if (obj["params"].is<const char *>()) {
+                return normalizeStatus(String(obj["params"].as<const char *>()));
+            }
+            return normalizeStatus(obj["params"].as<String>());
+        }
+        if (obj.containsKey("value")) {
+            if (obj["value"].is<bool>()) {
+                return obj["value"].as<bool>() ? "ON" : "OFF";
+            }
+            if (obj["value"].is<int>()) {
+                return obj["value"].as<int>() != 0 ? "ON" : "OFF";
+            }
+            if (obj["value"].is<const char *>()) {
+                return normalizeStatus(String(obj["value"].as<const char *>()));
+            }
+            return normalizeStatus(obj["value"].as<String>());
+        }
+    }
+    return String();
+}
+
+int rpcParamToGpio(const JsonVariantConst &data) {
+    if (data.is<JsonObjectConst>()) {
+        JsonObjectConst obj = data.as<JsonObjectConst>();
+        if (obj.containsKey("gpio")) {
+            return obj["gpio"].as<int>();
+        }
+    }
+    return kDefaultActuatorGpio;
+}
+} // namespace
+
+bool applyDevicePowerCommand(int gpio, const String &status)
+{
+    Serial.printf("⚙️ Điều khiển GPIO %d → %s\n", gpio, status.c_str());
+    pinMode(gpio, OUTPUT);
+
+    if (status.equalsIgnoreCase("ON"))
+    {
+        digitalWrite(gpio, HIGH);
+        Serial.printf("🔆 GPIO %d ON\n", gpio);
+        return true;
+    }
+
+    if (status.equalsIgnoreCase("OFF"))
+    {
+        digitalWrite(gpio, LOW);
+        Serial.printf("💤 GPIO %d OFF\n", gpio);
+        return true;
+    }
+
+    Serial.printf("⚠️ Trạng thái không hợp lệ cho GPIO %d: %s\n", gpio, status.c_str());
+    return false;
+}
+
+RPC_Response handlePowerRpc(const JsonVariantConst &data)
+{
+    String rawPayload;
+    serializeJson(data, rawPayload);
+    Serial.println("[CoreIOT] RPC callback triggered.");
+    Serial.println("[CoreIOT] RPC params: " + rawPayload);
+
+    const int gpio = rpcParamToGpio(data);
+    const String status = rpcParamToStatus(data);
+
+    if (status.isEmpty()) {
+        Serial.println("⚠️ RPC thiếu params/status");
+        return RPC_Response("success", false);
+    }
+
+    const bool ok = applyDevicePowerCommand(gpio, status);
+    Serial.printf("[CoreIOT] RPC result -> gpio=%d, status=%s, ok=%s\n",
+                  gpio, status.c_str(), ok ? "true" : "false");
+    return RPC_Response("success", ok);
+}
+
 void handleWebSocketMessage(String message)
 {
     Serial.println(message);
@@ -23,19 +149,7 @@ void handleWebSocketMessage(String message)
 
         int gpio = value["gpio"];
         String status = value["status"].as<String>();
-
-        Serial.printf("⚙️ Điều khiển GPIO %d → %s\n", gpio, status.c_str());
-        pinMode(gpio, OUTPUT);
-        if (status.equalsIgnoreCase("ON"))
-        {
-            digitalWrite(gpio, HIGH);
-            Serial.printf("🔆 GPIO %d ON\n", gpio);
-        }
-        else if (status.equalsIgnoreCase("OFF"))
-        {
-            digitalWrite(gpio, LOW);
-            Serial.printf("💤 GPIO %d OFF\n", gpio);
-        }
+        applyDevicePowerCommand(gpio, status);
     }
     else if (doc["page"] == "setting")
     {

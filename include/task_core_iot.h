@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include "global.h"
 
-// FreeRTOS task to handle CoreIOT (ThingsBoard) data publishing
 void coreiot_task(void *pvParameters);
 
 #endif
