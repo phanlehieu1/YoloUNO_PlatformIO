@@ -5,16 +5,41 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
 
-extern float glob_temperature;
-extern float glob_humidity;
+struct SensorData {
+  float temperature;
+  float humidity;
+};
 
-extern String WIFI_SSID;
-extern String WIFI_PASS;
-extern String CORE_IOT_TOKEN;
-extern String CORE_IOT_SERVER;
-extern String CORE_IOT_PORT;
+struct DeviceConfig {
+  String wifiSsid;
+  String wifiPass;
+  String coreIotToken;
+  String coreIotServer;
+  String coreIotPort;
+};
 
-extern boolean isWifiConnected;
-extern SemaphoreHandle_t xBinarySemaphoreInternet;
+enum TemperatureCondition {
+  TEMP_CONDITION_COLD,
+  TEMP_CONDITION_NORMAL,
+  TEMP_CONDITION_HOT,
+  TEMP_CONDITION_SENSOR_ERROR
+};
+
+void initRtosResources();
+QueueHandle_t sensorQueue();
+SemaphoreHandle_t sensorDataMutex();
+SemaphoreHandle_t newTemperatureSemaphore();
+SemaphoreHandle_t internetConnectedSemaphore();
+SemaphoreHandle_t deviceConfigMutex();
+
+bool readLatestSensorData(SensorData *data, TickType_t waitTicks = 0);
+bool writeLatestSensorData(const SensorData &data, TickType_t waitTicks = portMAX_DELAY);
+void notifyNewTemperature();
+
+DeviceConfig getDeviceConfig(TickType_t waitTicks = portMAX_DELAY);
+void setDeviceConfig(const DeviceConfig &config, TickType_t waitTicks = portMAX_DELAY);
+bool hasWifiCredentials();
+
 #endif

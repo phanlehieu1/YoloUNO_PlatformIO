@@ -1,53 +1,49 @@
 #include "coreiot.h"
 
-// ----------- CONFIGURE THESE! -----------
-const char* coreIOT_Server = "10.235.76.226";  
-const char* coreIOT_Token = "g7drm1amhd3dchr379xu";   // Device Access Token
-const int   mqttPort = 1883;
-// ----------------------------------------
+namespace {
+WiFiClient &espWifiClient()
+{
+  static WiFiClient client;
+  return client;
+}
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-
+PubSubClient &mqttClient()
+{
+  static PubSubClient client(espWifiClient());
+  return client;
+}
+}
 
 void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
+  while (!mqttClient().connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Attempt to connect (username=token, password=empty)
-    //if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
     String clientId = "ESP32Client-";
     clientId += String(random(0xffff), HEX);
 
-    if (client.connect(clientId.c_str())) {
-        
+    if (mqttClient().connect(clientId.c_str())) {
       Serial.println("connected to CoreIOT Server!");
-      client.subscribe("v1/devices/me/rpc/request/+");
+      mqttClient().subscribe("v1/devices/me/rpc/request/+");
       Serial.println("Subscribed to v1/devices/me/rpc/request/+");
-
     } else {
       Serial.print("failed, rc=");
-      Serial.print(client.state());
+      Serial.print(mqttClient().state());
       Serial.println(" try again in 5 seconds");
-      delay(5000);
+      vTaskDelay(pdMS_TO_TICKS(5000));
     }
   }
 }
-
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.println("] ");
 
-  // Allocate a temporary buffer for the message
   char message[length + 1];
   memcpy(message, payload, length);
   message[length] = '\0';
   Serial.print("Payload: ");
   Serial.println(message);
 
-  // Parse JSON
   StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, message);
 
@@ -59,18 +55,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   const char* method = doc["method"];
   if (strcmp(method, "setStateLED") == 0) {
-    // Check params type (could be boolean, int, or string according to your RPC)
-    // Example: {"method": "setValueLED", "params": "ON"}
     const char* params = doc["params"];
 
     if (strcmp(params, "ON") == 0) {
       Serial.println("Device turned ON.");
-      //TODO
-
-    } else {   
+    } else {
       Serial.println("Device turned OFF.");
-      //TODO
-
     }
   } else {
     Serial.print("Unknown method: ");
@@ -78,53 +68,34 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-
 void setup_coreiot(){
-
-  //Serial.print("Connecting to WiFi...");
-  //WiFi.begin(wifi_ssid, wifi_password);
-  //while (WiFi.status() != WL_CONNECTED) {
-  
-  // while (isWifiConnected == false) {
-  //   delay(500);
-  //   Serial.print(".");
-  // }
-
-  while(1){
-    if (xSemaphoreTake(xBinarySemaphoreInternet, portMAX_DELAY)) {
-      break;
-    }
-    delay(500);
+  // CoreIoT waits on this semaphore so MQTT starts only after Wi-Fi is ready.
+  while (xSemaphoreTake(internetConnectedSemaphore(), portMAX_DELAY) != pdTRUE) {
+    vTaskDelay(pdMS_TO_TICKS(500));
     Serial.print(".");
   }
 
-
+  const DeviceConfig config = getDeviceConfig();
   Serial.println(" Connected!");
-
-  client.setServer(CORE_IOT_SERVER.c_str(), CORE_IOT_PORT.toInt());
-  client.setCallback(callback);
-
+  mqttClient().setServer(config.coreIotServer.c_str(), config.coreIotPort.toInt());
+  mqttClient().setCallback(callback);
 }
 
 void coreiot_task(void *pvParameters){
-
     setup_coreiot();
 
     while(1){
-
-        if (!client.connected()) {
+        if (!mqttClient().connected()) {
             reconnect();
         }
-        client.loop();
+        mqttClient().loop();
 
-        // Sample payload, publish to 'v1/devices/me/telemetry'
-        String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
-        
-        client.publish("v1/devices/me/telemetry", payload.c_str());
+        SensorData data = { -1.0f, -1.0f };
+        readLatestSensorData(&data, pdMS_TO_TICKS(50));
+        String payload = "{\"temperature\":" + String(data.temperature) +  ",\"humidity\":" + String(data.humidity) + "}";
 
-
-        
+        mqttClient().publish("v1/devices/me/telemetry", payload.c_str());
         Serial.println("Published payload: " + payload);
-        vTaskDelay(10000);  // Publish every 10 seconds
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

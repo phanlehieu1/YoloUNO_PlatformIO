@@ -10,28 +10,30 @@ void startAP()
 
 void startSTA()
 {
-    if (WIFI_SSID.isEmpty())
+    const DeviceConfig config = getDeviceConfig();
+    if (config.wifiSsid.isEmpty())
     {
         vTaskDelete(NULL);
     }
 
     WiFi.mode(WIFI_STA);
 
-    if (WIFI_PASS.isEmpty())
+    if (config.wifiPass.isEmpty())
     {
-        WiFi.begin(WIFI_SSID.c_str());
+        WiFi.begin(config.wifiSsid.c_str());
     }
     else
     {
-        WiFi.begin(WIFI_SSID.c_str(), WIFI_PASS.c_str());
+        WiFi.begin(config.wifiSsid.c_str(), config.wifiPass.c_str());
     }
 
     while (WiFi.status() != WL_CONNECTED)
     {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-    //Give a semaphore here
-    xSemaphoreGive(xBinarySemaphoreInternet);
+
+    // This semaphore releases network tasks only after Wi-Fi is connected.
+    xSemaphoreGive(internetConnectedSemaphore());
 }
 
 bool Wifi_reconnect()

@@ -1,45 +1,49 @@
 #include "temp_humi_monitor.h"
-DHT20 dht20;
-LiquidCrystal_I2C lcd(33,16,2);
 
+namespace {
+DHT20 &dht20Sensor()
+{
+    static DHT20 dht20;
+    return dht20;
+}
 
-void temp_humi_monitor(void *pvParameters){
+LiquidCrystal_I2C &lcdDisplay()
+{
+    static LiquidCrystal_I2C lcd(33, 16, 2);
+    return lcd;
+}
+}
 
+void temp_humi_monitor(void *pvParameters)
+{
     Wire.begin(11, 12);
-    Serial.begin(115200);
-    dht20.begin();
+    dht20Sensor().begin();
+    lcdDisplay();
 
-    while (1){
-        /* code */
-        
-        dht20.read();
-        // Reading temperature in Celsius
-        float temperature = dht20.getTemperature();
-        // Reading humidity
-        float humidity = dht20.getHumidity();
+    while (1) {
+        dht20Sensor().read();
 
-        
+        SensorData data;
+        data.temperature = dht20Sensor().getTemperature();
+        data.humidity = dht20Sensor().getHumidity();
 
-        // Check if any reads failed and exit early
-        if (isnan(temperature) || isnan(humidity)) {
+        if (isnan(data.temperature) || isnan(data.humidity)) {
             Serial.println("Failed to read from DHT sensor!");
-            temperature = humidity =  -1;
-            //return;
+            data.temperature = -1.0f;
+            data.humidity = -1.0f;
         }
 
-        //Update global variables for temperature and humidity
-        glob_temperature = temperature;
-        glob_humidity = humidity;
+        // The sensor queue carries the newest reading; the semaphore tells LED logic to re-check its condition.
+        if (writeLatestSensorData(data, pdMS_TO_TICKS(100))) {
+            notifyNewTemperature();
+        }
 
-        // Print the results
-        
         Serial.print("Humidity: ");
-        Serial.print(humidity);
+        Serial.print(data.humidity);
         Serial.print("%  Temperature: ");
-        Serial.print(temperature);
+        Serial.print(data.temperature);
         Serial.println("°C");
-        
-        vTaskDelay(5000);
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
-    
 }

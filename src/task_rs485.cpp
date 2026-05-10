@@ -1,19 +1,25 @@
 #include "task_rs485.h"
 
-HardwareSerial RS485Serial(1);
-
 #define delay_connect 100
 #define TXD_RS485 9
 #define RXD_RS485 10
 
+namespace {
+HardwareSerial &rs485Serial()
+{
+    static HardwareSerial serial(1);
+    return serial;
+}
+}
+
 void sendRS485Command(byte *command, int commandSize, byte *response, int responseSize)
 {
-    RS485Serial.write(command, commandSize);
-    RS485Serial.flush();
+    rs485Serial().write(command, commandSize);
+    rs485Serial().flush();
     delay(100);
-    if (RS485Serial.available() >= responseSize)
+    if (rs485Serial().available() >= responseSize)
     {
-        RS485Serial.readBytes(response, responseSize);
+        rs485Serial().readBytes(response, responseSize);
     }
     else
     {
@@ -81,24 +87,22 @@ void Task_Read_Sensor(void *pvParameters)
 
 void Task_Send_data(void *pvParameters)
 {
-    // Relay ON command template
     const uint8_t relay_ON[][8] = {
-        {1, 5, 0, 0, 255, 0, 140, 58},  // Relay 0 ON
-        {1, 5, 0, 1, 255, 0, 221, 250}, // Relay 1 ON
-        {1, 5, 0, 2, 255, 0, 45, 250},  // Relay 2 ON
-        {1, 5, 0, 3, 255, 0, 124, 58},  // Relay 3 ON
-        {1, 5, 0, 31, 255, 0, 189, 252} // Relay ALL ON
+        {1, 5, 0, 0, 255, 0, 140, 58},
+        {1, 5, 0, 1, 255, 0, 221, 250},
+        {1, 5, 0, 2, 255, 0, 45, 250},
+        {1, 5, 0, 3, 255, 0, 124, 58},
+        {1, 5, 0, 31, 255, 0, 189, 252}
     };
 
-    // Relay OFF command template
     const uint8_t relay_OFF[][8] = {
-        {1, 5, 0, 0, 0, 0, 205, 202}, // Relay 0 OFF
-        {1, 5, 0, 1, 0, 0, 156, 10},  // Relay 1 OFF
-        {1, 5, 0, 2, 0, 0, 108, 10},  // Relay 2 OFF
-        {1, 5, 0, 3, 0, 0, 61, 202},  // Relay 3 OFF
-        {1, 5, 0, 31, 0, 0, 252, 207} // Relay ALL OFF
+        {1, 5, 0, 0, 0, 0, 205, 202},
+        {1, 5, 0, 1, 0, 0, 156, 10},
+        {1, 5, 0, 2, 0, 0, 108, 10},
+        {1, 5, 0, 3, 0, 0, 61, 202},
+        {1, 5, 0, 31, 0, 0, 252, 207}
     };
-    bool state = false; // false = bật, true = tắt
+    bool state = false;
 
     while (true)
     {
@@ -109,7 +113,7 @@ void Task_Send_data(void *pvParameters)
             {
                 sendModbusCommand(relay_ON[i], sizeof(relay_ON[i]));
                 Serial.println("Bật relay " + String(i));
-                vTaskDelay(1000 / portTICK_PERIOD_MS); // Giữ 1 giây giữa mỗi lần bật
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
         }
         else
@@ -119,7 +123,7 @@ void Task_Send_data(void *pvParameters)
             {
                 sendModbusCommand(relay_OFF[i], sizeof(relay_OFF[i]));
                 Serial.println("Tắt relay " + String(i));
-                vTaskDelay(1000 / portTICK_PERIOD_MS); // Giữ 1 giây giữa mỗi lần tắt
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
         }
 
@@ -128,17 +132,14 @@ void Task_Send_data(void *pvParameters)
         else
             Serial.println("✅ Hoàn tất tắt tất cả relay!");
 
-        // Đảo trạng thái cho lần kế tiếp
         state = !state;
-
-        // Nghỉ giữa 2 chu kỳ (3 giây)
         vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 
 void tasksensor_init()
 {
-    RS485Serial.begin(9600, SERIAL_8N1, TXD_RS485, RXD_RS485);
+    rs485Serial().begin(9600, SERIAL_8N1, TXD_RS485, RXD_RS485);
     xTaskCreate(Task_Read_Sensor, "Task_Read_Sensor", 4096, NULL, 1, NULL);
     xTaskCreate(Task_Send_data, "Task_Send_data", 4096, NULL, 1, NULL);
 }

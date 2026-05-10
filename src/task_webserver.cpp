@@ -1,15 +1,31 @@
 #include "task_webserver.h"
+#include <task_handler.h>
 
-AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");
+namespace {
+AsyncWebServer &webServer()
+{
+    static AsyncWebServer server(80);
+    return server;
+}
 
-bool webserver_isrunning = false;
+AsyncWebSocket &webSocket()
+{
+    static AsyncWebSocket ws("/ws");
+    return ws;
+}
+
+bool &webserverRunning()
+{
+    static bool running = false;
+    return running;
+}
+}
 
 void Webserver_sendata(String data)
 {
-    if (ws.count() > 0)
+    if (webSocket().count() > 0)
     {
-        ws.textAll(data); // Gửi đến tất cả client đang kết nối
+        webSocket().textAll(data); // Gửi đến tất cả client đang kết nối
         Serial.println("📤 Đã gửi dữ liệu qua WebSocket: " + data);
     }
     else
@@ -36,7 +52,6 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
         {
             String message;
             message += String((char *)data).substring(0, len);
-            // parseJson(message, true);
             handleWebSocketMessage(message);
         }
     }
@@ -44,29 +59,29 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 
 void connnectWSV()
 {
-    ws.onEvent(onEvent);
-    server.addHandler(&ws);
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+    webSocket().onEvent(onEvent);
+    webServer().addHandler(&webSocket());
+    webServer().on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(LittleFS, "/index.html", "text/html"); });
-    server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
+    webServer().on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(LittleFS, "/script.js", "application/javascript"); });
-    server.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request)
+    webServer().on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(LittleFS, "/styles.css", "text/css"); });
-    server.begin();
-    ElegantOTA.begin(&server);
-    webserver_isrunning = true;
+    webServer().begin();
+    ElegantOTA.begin(&webServer());
+    webserverRunning() = true;
 }
 
 void Webserver_stop()
 {
-    ws.closeAll();
-    server.end();
-    webserver_isrunning = false;
+    webSocket().closeAll();
+    webServer().end();
+    webserverRunning() = false;
 }
 
 void Webserver_reconnect()
 {
-    if (!webserver_isrunning)
+    if (!webserverRunning())
     {
         connnectWSV();
     }
