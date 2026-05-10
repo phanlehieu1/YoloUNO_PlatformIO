@@ -16,7 +16,11 @@ void startSTA()
         vTaskDelete(NULL);
     }
 
-    WiFi.mode(WIFI_STA);
+    // Always keep AP mode alive so configuration portal is always accessible
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(String(SSID_AP), String(PASS_AP));
+    Serial.print("Configuration AP IP: ");
+    Serial.println(WiFi.softAPIP());
 
     if (config.wifiPass.isEmpty())
     {
@@ -31,6 +35,8 @@ void startSTA()
     {
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+    Serial.print("Station IP: ");
+    Serial.println(WiFi.localIP());
 
     // This semaphore releases network-dependent tasks (CoreIOT) after Wi-Fi connects.
     xSemaphoreGive(internetConnectedSemaphore());
