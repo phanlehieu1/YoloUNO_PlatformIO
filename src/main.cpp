@@ -27,7 +27,12 @@ void setup()
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
 
   // Task 2: NeoPixel colour determined by humidity level
+<<<<<<< HEAD
   xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
+=======
+  // Stack 4096: Adafruit NeoPixel library needs more stack than 2048
+  xTaskCreate(neo_blinky, "Task NEO Blink", 4096, NULL, 2, NULL);
+>>>>>>> task_4
 
   // Sensor task: reads DHT20 and notifies Task 1, 2, 3
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 4096, NULL, 2, NULL);

@@ -1,352 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap');
+
+:root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --blue: #58a6ff;
+    --cyan: #79c0ff;
+    --red: #ff7b72;
+    --green: #2ea043;
+    --orange: #f2a65a;
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
 body {
-  margin          : 0;
-  font-family     : "Poppins", Arial, sans-serif;
-  display         : flex;
-  height          : 100vh;
-  background-color: #eef2f7;
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    color: var(--text);
+    margin: 0;
+    padding: 24px 18px;
+    background: radial-gradient(circle at top, rgba(88, 166, 255, 0.15), transparent 35%),
+                linear-gradient(180deg, #0d1117 0%, #090d13 100%);
+    min-height: 100vh;
 }
 
-/* Sidebar */
-.sidebar {
-  width           : 260px;
-  background-color: #2294F2;
-  color           : white;
-  display         : flex;
-  flex-direction  : column;
-  align-items     : center;
-  box-shadow      : 3px 0 10px rgba(0, 0, 0, 0.2);
+h1 { color: var(--blue); text-transform: uppercase; letter-spacing: 2px; }
+.subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+/* Tabs */
+.tabs { margin-bottom: 20px; }
+.tab-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 20px; font-family: 'Orbitron'; font-size: 1rem; cursor: pointer;
+    border-radius: 8px; margin: 0 5px; transition: 0.3s;
 }
+.tab-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.4s ease; }
 
-.logo-container {
-  width          : 100%;
-  background     : white;
-  display        : flex;
-  justify-content: center;
-  align-items    : center;
-  padding        : 20px 0;
-  border-bottom  : 2px solid rgba(0, 0, 0, 0.1);
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Panels */
+.section-title { text-align: left; max-width: 900px; margin: 0 auto 15px; color: #fff; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+.dashboard-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; max-width: 900px; margin: 0 auto; }
+.panel {
+    background: linear-gradient(180deg, rgba(22, 27, 34, 0.96), rgba(13, 17, 23, 0.95));
+    border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow);
 }
+.gauge-card { width: 220px; }
+.state-card { width: 300px; display: flex; flex-direction: column; justify-content: center; }
 
-.logo-img {
-  width : 80%;
-  height: auto;
+/* Typography inside cards */
+.card-eyebrow { color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+.state-value { font-size: 1.8rem; font-weight: bold; color: var(--green); text-shadow: 0 0 10px rgba(46, 160, 67, 0.5); margin: 15px 0; }
+.state-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+
+/* SVG Gauge */
+.gauge { position: relative; width: 160px; height: 160px; margin: 0 auto; }
+svg { width: 100%; height: 100%; }
+.track { fill: none; stroke: #21262d; stroke-width: 12; stroke-linecap: round; }
+.progress { fill: none; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 330 440; stroke-dashoffset: 330; transition: stroke-dashoffset 0.8s ease; }
+.temp-prog { stroke: var(--red); filter: drop-shadow(0 0 8px rgba(255, 123, 114, 0.6)); }
+.humi-prog { stroke: var(--cyan); filter: drop-shadow(0 0 8px rgba(121, 192, 255, 0.6)); }
+
+.gauge-data { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.value { font-size: 1.8rem; font-weight: bold; color: #fff; }
+.unit { font-size: 0.9rem; color: var(--muted); }
+.label { margin-top: 10px; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; }
+
+/* Settings Form */
+.config-card { max-width: 500px; margin: 0 auto; text-align: left; }
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
+.input-group input { 
+    width: 100%; padding: 12px; background: rgba(13, 17, 23, 0.9); border: 1px solid var(--border); 
+    border-radius: 8px; color: var(--text); font-family: 'Orbitron'; outline: none; 
 }
+.input-group input:focus { border-color: var(--blue); box-shadow: 0 0 8px rgba(88, 166, 255, 0.3); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 25px 0; }
 
-.nav-item {
-  width        : 90%;
-  padding      : 16px 20px;
-  margin       : 8px 0;
-  font-size    : 18px;
-  font-weight  : 600;
-  cursor       : pointer;
-  border-radius: 10px;
-  color        : #ecf6ff;
-  transition   : all 0.3s ease;
-  display      : flex;
-  align-items  : center;
-  gap          : 12px;
+.btn-save { 
+    width: 100%; padding: 14px; background: linear-gradient(135deg, #1f8f4b, var(--green)); 
+    border: none; color: white; font-family: 'Orbitron'; font-weight: bold; font-size: 1rem; 
+    border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
 }
+.btn-save:hover { box-shadow: 0 0 15px rgba(46, 160, 67, 0.5); }
+.status-msg { margin-top: 15px; text-align: center; font-size: 0.9rem; min-height: 20px; }
 
-.nav-item.active {
-  background: #fff;
-  color     : #2294F2;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-/* Main Content */
-.main-content {
-  flex      : 1;
-  padding   : 40px 60px;
-  overflow-y: auto;
-}
-
-/* Home Gauges */
-.gauges-container {
-  display        : flex;
-  flex-wrap      : wrap;
-  gap            : 30px;
-  justify-content: center;
-}
-
-.gauge-card {
-  background   : white;
-  border-radius: 16px;
-  box-shadow   : 0 6px 16px rgba(0, 0, 0, 0.1);
-  padding      : 30px;
-  text-align   : center;
-  width        : 300px;
-  transition   : transform 0.3s ease;
-}
-
-#gauge_temp,
-#gauge_humi {
-  width : 260px;
-  height: 260px;
-  margin: 0 auto;
-}
-
-/* Device Page */
-.device-list {
-  display        : flex;
-  flex-wrap      : wrap;
-  gap            : 25px;
-  margin-top     : 30px;
-  justify-content: center;
-}
-
-.device-card {
-  background   : #fff;
-  border-radius: 20px;
-  box-shadow   : 0 5px 20px rgba(0, 0, 0, 0.1);
-  width        : 240px;
-  padding      : 25px 20px;
-  text-align   : center;
-  position     : relative;
-  transition   : all 0.3s ease;
-}
-
-.device-card:hover {
-  transform : translateY(-5px);
-  box-shadow: 0 8px 25px rgba(34, 148, 242, 0.25);
-}
-
-.device-icon {
-  font-size    : 36px;
-  color        : #2294F2;
-  margin-bottom: 10px;
-}
-
-.toggle-btn {
-  width        : 100%;
-  border       : none;
-  border-radius: 12px;
-  padding      : 12px;
-  font-weight  : 600;
-  font-size    : 16px;
-  cursor       : pointer;
-  background   : #e3e3e3;
-  transition   : 0.3s;
-}
-
-.toggle-btn.on {
-  background: linear-gradient(90deg, #2294F2, #1b7fe0);
-  color     : white;
-  box-shadow: 0 4px 12px rgba(34, 148, 242, 0.4);
-}
-
-.delete-icon {
-  position: absolute;
-  top     : 10px;
-  right   : 12px;
-  color   : #e74c3c;
-  cursor  : pointer;
-}
-
-.add-relay-btn {
-  position     : fixed;
-  bottom       : 35px;
-  right        : 35px;
-  background   : linear-gradient(135deg, #2294F2, #1a75e6);
-  color        : white;
-  border       : none;
-  border-radius: 50%;
-  width        : 80px;
-  /* to hơn chút */
-  height       : 80px;
-  font-size    : 34px;
-  /* icon lớn hơn */
-  cursor       : pointer;
-  box-shadow   : 0 6px 20px rgba(0, 0, 0, 0.25);
-  transition   : 0.3s;
-}
-
-.add-relay-btn:hover {
-  transform : scale(1.08);
-  box-shadow: 0 8px 25px rgba(34, 148, 242, 0.4);
-}
-
-
-/* Settings */
-.settings-section {
-  display        : flex;
-  justify-content: center;
-  align-items    : flex-start;
-  padding-top    : 40px;
-  height         : 100%;
-}
-
-.settings-card {
-  background   : white;
-  padding      : 50px 60px;
-  border-radius: 20px;
-  box-shadow   : 0 10px 25px rgba(0, 0, 0, 0.15);
-  width        : 850px;
-  /* ✅ to hơn */
-  max-width    : 95%;
-  text-align   : center;
-}
-
-.settings-card h2 {
-  color        : #2294F2;
-  margin-bottom: 15px;
-}
-
-.settings-card p {
-  color        : #666;
-  margin-bottom: 35px;
-  font-size    : 15px;
-}
-
-/* FORM STYLE — vertical layout with spacing */
-#settingsForm {
-  width         : 100%;
-  display       : flex;
-  flex-direction: column;
-  align-items   : center;
-}
-
-/* mỗi input-group là 1 dòng, cách nhau */
-.input-group {
-  position     : relative;
-  width        : 98%;
-  /* ✅ rộng gần hết khung */
-  max-width    : 760px;
-  /* ✅ dài hơn hẳn */
-  margin-bottom: 20px;
-  /* ✅ tạo khoảng cách giữa các dòng */
-}
-
-.input-group i {
-  position : absolute;
-  top      : 50%;
-  left     : 18px;
-  transform: translateY(-50%);
-  color    : #2294F2;
-  font-size: 18px;
-}
-
-.input-group input {
-  width           : 100%;
-  padding         : 16px 18px 16px 54px;
-  border-radius   : 14px;
-  border          : 1.5px solid #ccc;
-  font-size       : 17px;
-  background-color: #f9f9f9;
-  transition      : all 0.3s ease;
-  box-sizing      : border-box;
-}
-
-.input-group input:focus {
-  border-color    : #2294F2;
-  box-shadow      : 0 0 10px rgba(34, 148, 242, 0.25);
-  background-color: #fff;
-}
-
-/* Save Button */
-.btn-save {
-  margin-top   : 25px;
-  background   : linear-gradient(90deg, #2294F2, #1b7fe0);
-  color        : white;
-  border       : none;
-  border-radius: 12px;
-  padding      : 16px 44px;
-  font-size    : 18px;
-  font-weight  : 600;
-  cursor       : pointer;
-  box-shadow   : 0 6px 18px rgba(34, 148, 242, 0.45);
-  transition   : all 0.3s ease;
-}
-
-.btn-save:hover {
-  transform : translateY(-2px);
-  box-shadow: 0 8px 22px rgba(34, 148, 242, 0.55);
-}
-
-
-/* Dialog */
-.dialog-overlay {
-  position       : fixed;
-  top            : 0;
-  left           : 0;
-  right          : 0;
-  bottom         : 0;
-  background     : rgba(0, 0, 0, 0.5);
-  display        : flex;
-  justify-content: center;
-  align-items    : center;
-  z-index        : 100;
-}
-
-.dialog {
-  background   : white;
-  border-radius: 20px;
-  padding      : 35px 30px;
-  width        : 380px;
-  text-align   : center;
-  box-shadow   : 0 12px 35px rgba(0, 0, 0, 0.25);
-  animation    : popIn 0.25s ease;
-}
-
-.dialog h3 {
-  font-size: 22px;
-  color    : #2294F2;
-}
-
-.dialog.warning h3 {
-  color: #e74c3c;
-}
-
-.dialog p {
-  color    : #666;
-  font-size: 15px;
-}
-
-.input-field input {
-  width        : 90%;
-  padding      : 12px;
-  border       : 1.5px solid #ccc;
-  border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-.dialog-buttons {
-  display        : flex;
-  justify-content: center;
-  gap            : 15px;
-}
-
-.dialog-buttons button {
-  padding      : 10px 22px;
-  border       : none;
-  border-radius: 10px;
-  font-weight  : 600;
-  cursor       : pointer;
-  transition   : 0.3s;
-}
-
-.dialog-buttons .confirm {
-  background: linear-gradient(90deg, #2294F2, #1b7fe0);
-  color     : white;
-}
-
-.dialog-buttons .danger {
-  background: #e74c3c;
-  color     : white;
-}
-
-.dialog-buttons .cancel {
-  background: #ddd;
-  color     : #333;
-}
-
-@keyframes popIn {
-  from {
-    transform: scale(0.8);
-    opacity  : 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity  : 1;
-  }
-}
+#connection-status { margin-top: 30px; font-size: 0.8rem; color: var(--muted); font-family: monospace; }

@@ -4,7 +4,7 @@
 void handleWebSocketMessage(String message)
 {
     Serial.println(message);
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<512> doc;
 
     DeserializationError error = deserializeJson(doc, message);
     if (error)
