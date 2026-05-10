@@ -35,11 +35,8 @@ void startSTA()
     {
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-<<<<<<< HEAD
-=======
     Serial.print("Station IP: ");
     Serial.println(WiFi.localIP());
->>>>>>> task_4
 
     // This semaphore releases network-dependent tasks (CoreIOT) after Wi-Fi connects.
     xSemaphoreGive(internetConnectedSemaphore());

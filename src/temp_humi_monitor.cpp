@@ -1,9 +1,6 @@
 #include "temp_humi_monitor.h"
-<<<<<<< HEAD
-=======
 #include <ArduinoJson.h>
 #include "task_webserver.h"
->>>>>>> task_4
 
 // ============================================================
 //  Sensor task — reads DHT20 every 5 seconds and publishes
@@ -57,8 +54,6 @@ void temp_humi_monitor(void *pvParameters) {
     Serial.printf("Humidity: %.1f%%  Temperature: %.1fC  State: %s\n",
                   data.humidity, data.temperature, stateLabel(state));
 
-<<<<<<< HEAD
-=======
     // Send data over WebSocket to Dashboard
     StaticJsonDocument<128> doc;
     doc["temperature"] = data.temperature;
@@ -69,7 +64,6 @@ void temp_humi_monitor(void *pvParameters) {
     serializeJson(doc, jsonString);
     Webserver_sendata(jsonString);
 
->>>>>>> task_4
     vTaskDelay(kSampleDelay);
   }
 }

@@ -4,7 +4,7 @@
 #include "neo_blinky.h"
 #include "temp_humi_monitor.h"
 // #include "mainserver.h"
-// #include "tinyml.h"
+#include "tinyml.h"
 #include "coreiot.h"
 
 // include task
@@ -27,12 +27,8 @@ void setup()
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
 
   // Task 2: NeoPixel colour determined by humidity level
-<<<<<<< HEAD
-  xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
-=======
-  // Stack 4096: Adafruit NeoPixel library needs more stack than 2048
+  // Stack 4096: Adafruit NeoPixel library needs more than 2048
   xTaskCreate(neo_blinky, "Task NEO Blink", 4096, NULL, 2, NULL);
->>>>>>> task_4
 
   // Sensor task: reads DHT20 and notifies Task 1, 2, 3
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 4096, NULL, 2, NULL);
@@ -40,11 +36,13 @@ void setup()
   // Task 3: LCD displays temp/humidity with NORMAL/WARNING/CRITICAL states
   xTaskCreate(lcd_display_task, "Task LCD Display", 4096, NULL, 2, NULL);
 
+  // Task 5: TinyML anomaly detection on sensor data
+  xTaskCreate(tiny_ml_task, "TinyML Task", 8192, NULL, 2, NULL);
+
   // CoreIOT: publishes telemetry over MQTT
   xTaskCreate(coreiot_task, "CoreIOT Task", 4096, NULL, 2, NULL);
 
   // xTaskCreate(main_server_task, "Task Main Server", 8192, NULL, 2, NULL);
-  // xTaskCreate(tiny_ml_task, "Tiny ML Task", 2048, NULL, 2, NULL);
   // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
 }
 
