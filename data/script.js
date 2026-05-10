@@ -70,6 +70,22 @@ function onMessage(event) {
             desc.innerText = "Thresholds exceeded! Action required.";
         }
     }
+    
+    if (data.tinyml_score !== undefined) {
+        let el = document.getElementById('tinyml-status');
+        document.getElementById('tinyml-score').innerText = parseFloat(data.tinyml_score).toFixed(4);
+        document.getElementById('tinyml-infer').innerText = data.tinyml_infer_ms;
+        
+        if (data.tinyml_anomaly) {
+            el.innerText = "ANOMALY ⚠️";
+            el.style.color = "var(--red)";
+            el.style.textShadow = "0 0 10px rgba(255, 123, 114, 0.5)";
+        } else {
+            el.innerText = "NORMAL ✅";
+            el.style.color = "var(--green)";
+            el.style.textShadow = "0 0 10px rgba(46, 160, 67, 0.5)";
+        }
+    }
 }
 
 function switchTab(tabId) {

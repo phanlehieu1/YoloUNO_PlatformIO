@@ -56,6 +56,16 @@
                 <div class="state-value" id="system-state">UNKNOWN</div>
                 <div class="state-desc" id="system-desc">Waiting for data...</div>
             </div>
+            
+            <!-- TinyML State -->
+            <div class="panel state-card">
+                <div class="card-eyebrow">TinyML AI Engine</div>
+                <div class="state-value" id="tinyml-status" style="color: var(--muted); text-shadow: none;">WAITING</div>
+                <div class="state-desc">
+                    Score: <span id="tinyml-score" style="color: #fff; font-weight: bold;">--</span><br>
+                    Latency: <span id="tinyml-infer" style="color: #fff; font-weight: bold;">--</span> ms
+                </div>
+            </div>
         </div>
     </div>
 
