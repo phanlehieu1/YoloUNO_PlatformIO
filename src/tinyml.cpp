@@ -1,75 +1,90 @@
 #include "tinyml.h"
 
-// Globals, for the convenience of one-shot setup.
-namespace
-{
-    tflite::ErrorReporter *error_reporter = nullptr;
-    const tflite::Model *model = nullptr;
-    tflite::MicroInterpreter *interpreter = nullptr;
-    TfLiteTensor *input = nullptr;
-    TfLiteTensor *output = nullptr;
-    constexpr int kTensorArenaSize = 8 * 1024; // Adjust size based on your model
-    uint8_t tensor_arena[kTensorArenaSize];
-} // namespace
+// ============================================================
+//  TinyML — inference engine (uses accessor functions)
+// ============================================================
 
-void setupTinyML()
-{
+namespace {
+tflite::ErrorReporter *&errorReporter() {
+    static tflite::ErrorReporter *reporter = nullptr;
+    return reporter;
+}
+
+const tflite::Model *&modelHandle() {
+    static const tflite::Model *model = nullptr;
+    return model;
+}
+
+tflite::MicroInterpreter *&interpreterHandle() {
+    static tflite::MicroInterpreter *interpreter = nullptr;
+    return interpreter;
+}
+
+TfLiteTensor *&inputTensor() {
+    static TfLiteTensor *input = nullptr;
+    return input;
+}
+
+TfLiteTensor *&outputTensor() {
+    static TfLiteTensor *output = nullptr;
+    return output;
+}
+
+uint8_t *tensorArena() {
+    static uint8_t arena[8 * 1024];
+    return arena;
+}
+} // anonymous namespace
+
+void setupTinyML() {
     Serial.println("TensorFlow Lite Init....");
     static tflite::MicroErrorReporter micro_error_reporter;
-    error_reporter = &micro_error_reporter;
+    errorReporter() = &micro_error_reporter;
 
-    model = tflite::GetModel(dht_anomaly_model_tflite); // g_model_data is from model_data.h
-    if (model->version() != TFLITE_SCHEMA_VERSION)
-    {
-        error_reporter->Report("Model provided is schema version %d, not equal to supported version %d.",
-                               model->version(), TFLITE_SCHEMA_VERSION);
+    modelHandle() = tflite::GetModel(dht_anomaly_model_tflite);
+    if (modelHandle()->version() != TFLITE_SCHEMA_VERSION) {
+        errorReporter()->Report("Model provided is schema version %d, not equal to supported version %d.",
+                               modelHandle()->version(), TFLITE_SCHEMA_VERSION);
         return;
     }
 
     static tflite::AllOpsResolver resolver;
     static tflite::MicroInterpreter static_interpreter(
-        model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
-    interpreter = &static_interpreter;
+        modelHandle(), resolver, tensorArena(), 8 * 1024, errorReporter());
+    interpreterHandle() = &static_interpreter;
 
-    TfLiteStatus allocate_status = interpreter->AllocateTensors();
-    if (allocate_status != kTfLiteOk)
-    {
-        error_reporter->Report("AllocateTensors() failed");
+    TfLiteStatus allocate_status = interpreterHandle()->AllocateTensors();
+    if (allocate_status != kTfLiteOk) {
+        errorReporter()->Report("AllocateTensors() failed");
         return;
     }
 
-    input = interpreter->input(0);
-    output = interpreter->output(0);
+    inputTensor()  = interpreterHandle()->input(0);
+    outputTensor() = interpreterHandle()->output(0);
 
     Serial.println("TensorFlow Lite Micro initialized on ESP32.");
 }
 
-void tiny_ml_task(void *pvParameters)
-{
-
+void tiny_ml_task(void *pvParameters) {
     setupTinyML();
 
-    while (1)
-    {
+    while (1) {
+        SensorData data = {-1.0f, -1.0f};
+        readLatestSensorData(&data, pdMS_TO_TICKS(50));
 
-        // Prepare input data (e.g., sensor readings)
-        // For a simple example, let's assume a single float input
-        input->data.f[0] = glob_temperature;
-        input->data.f[1] = glob_humidity;
+        inputTensor()->data.f[0] = data.temperature;
+        inputTensor()->data.f[1] = data.humidity;
 
-        // Run inference
-        TfLiteStatus invoke_status = interpreter->Invoke();
-        if (invoke_status != kTfLiteOk)
-        {
-            error_reporter->Report("Invoke failed");
+        TfLiteStatus invoke_status = interpreterHandle()->Invoke();
+        if (invoke_status != kTfLiteOk) {
+            errorReporter()->Report("Invoke failed");
             return;
         }
 
-        // Get and process output
-        float result = output->data.f[0];
+        float result = outputTensor()->data.f[0];
         Serial.print("Inference result: ");
         Serial.println(result);
 
-        vTaskDelay(5000);
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

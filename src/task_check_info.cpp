@@ -15,11 +15,13 @@ void Load_info_File()
   }
   else
   {
-    WIFI_SSID = strdup(doc["WIFI_SSID"]);
-    WIFI_PASS = strdup(doc["WIFI_PASS"]);
-    CORE_IOT_TOKEN = strdup(doc["CORE_IOT_TOKEN"]);
-    CORE_IOT_SERVER = strdup(doc["CORE_IOT_SERVER"]);
-    CORE_IOT_PORT = strdup(doc["CORE_IOT_PORT"]);
+    DeviceConfig config;
+    config.wifiSsid     = doc["WIFI_SSID"].as<String>();
+    config.wifiPass     = doc["WIFI_PASS"].as<String>();
+    config.coreIotToken  = doc["CORE_IOT_TOKEN"].as<String>();
+    config.coreIotServer = doc["CORE_IOT_SERVER"].as<String>();
+    config.coreIotPort   = doc["CORE_IOT_PORT"].as<String>();
+    setDeviceConfig(config);
   }
   file.close();
 }
@@ -33,17 +35,17 @@ void Delete_info_File()
   ESP.restart();
 }
 
-void Save_info_File(String wifi_ssid, String wifi_pass, String CORE_IOT_TOKEN, String CORE_IOT_SERVER, String CORE_IOT_PORT)
+void Save_info_File(String wifi_ssid, String wifi_pass, String core_iot_token, String core_iot_server, String core_iot_port)
 {
   Serial.println(wifi_ssid);
   Serial.println(wifi_pass);
 
   DynamicJsonDocument doc(4096);
-  doc["WIFI_SSID"] = wifi_ssid;
-  doc["WIFI_PASS"] = wifi_pass;
-  doc["CORE_IOT_TOKEN"] = CORE_IOT_TOKEN;
-  doc["CORE_IOT_SERVER"] = CORE_IOT_SERVER;
-  doc["CORE_IOT_PORT"] = CORE_IOT_PORT;
+  doc["WIFI_SSID"]       = wifi_ssid;
+  doc["WIFI_PASS"]       = wifi_pass;
+  doc["CORE_IOT_TOKEN"]  = core_iot_token;
+  doc["CORE_IOT_SERVER"] = core_iot_server;
+  doc["CORE_IOT_PORT"]   = core_iot_port;
 
   File configFile = LittleFS.open("/info.dat", "w");
   if (configFile)
@@ -53,7 +55,7 @@ void Save_info_File(String wifi_ssid, String wifi_pass, String CORE_IOT_TOKEN, S
   }
   else
   {
-    Serial.println('Unable to save the configuration.');
+    Serial.println("Unable to save the configuration.");
   }
   ESP.restart();
 };
@@ -69,8 +71,8 @@ bool check_info_File(bool check)
     }
     Load_info_File();
   }
-  
-  if (WIFI_SSID.isEmpty() && WIFI_PASS.isEmpty())
+
+  if (!hasWifiCredentials())
   {
     if (!check)
     {

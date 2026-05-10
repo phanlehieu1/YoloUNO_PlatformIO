@@ -26,24 +26,6 @@ void processSharedAttributes(const Shared_Attribute_Data &data)
 {
     for (auto it = data.begin(); it != data.end(); ++it)
     {
-        // if (strcmp(it->key().c_str(), BLINKING_INTERVAL_ATTR) == 0)
-        // {
-        //     const uint16_t new_interval = it->value().as<uint16_t>();
-        //     if (new_interval >= BLINKING_INTERVAL_MS_MIN && new_interval <= BLINKING_INTERVAL_MS_MAX)
-        //     {
-        //         blinkingInterval = new_interval;
-        //         Serial.print("Blinking interval is set to: ");
-        //         Y
-        //             Serial.println(new_interval);
-        //     }
-        // }
-        // if (strcmp(it->key().c_str(), LED_STATE_ATTR) == 0)
-        // {
-        //     ledState = it->value().as<bool>();
-        // digitalWrite(LED_PIN, ledState);
-        // Serial.print("LED state is set to: ");
-        // Serial.println(ledState);
-        // }
     }
 }
 
@@ -73,19 +55,17 @@ void CORE_IOT_sendata(String mode, String feed, String data)
         float value = data.toFloat();
         tb.sendTelemetryData(feed.c_str(), value);
     }
-    else
-    {
-        // handle unknown mode
-    }
 }
 
 void CORE_IOT_reconnect()
 {
+    // Read config via RTOS accessor (no global variables)
+    const DeviceConfig config = getDeviceConfig();
+
     if (!tb.connected())
     {
-        if (!tb.connect(CORE_IOT_SERVER.c_str(), CORE_IOT_TOKEN.c_str(), CORE_IOT_PORT.toInt()))
+        if (!tb.connect(config.coreIotServer.c_str(), config.coreIotToken.c_str(), config.coreIotPort.toInt()))
         {
-            // Serial.println("Failed to connect");
             return;
         }
 
@@ -94,13 +74,11 @@ void CORE_IOT_reconnect()
         Serial.println("Subscribing for RPC...");
         if (!tb.RPC_Subscribe(callbacks.cbegin(), callbacks.cend()))
         {
-            // Serial.println("Failed to subscribe for RPC");
             return;
         }
 
         if (!tb.Shared_Attributes_Subscribe(attributes_callback))
         {
-            // Serial.println("Failed to subscribe for shared attribute updates");
             return;
         }
 
@@ -108,7 +86,6 @@ void CORE_IOT_reconnect()
 
         if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
         {
-            // Serial.println("Failed to request for shared attributes");
             return;
         }
         tb.sendAttributeData("localIp", WiFi.localIP().toString().c_str());
