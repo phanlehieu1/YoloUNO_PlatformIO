@@ -98,16 +98,20 @@ function saveSettings() {
     statusMsg.innerText = "Saving configuration...";
     statusMsg.style.color = "var(--cyan)";
 
+    // Must match format expected by task_handler.cpp:
+    // doc["page"] == "setting" && doc["value"]["ssid"], ["password"], ["token"], ["server"], ["port"]
     let configData = {
-        type: "config",
-        WIFI_SSID: ssid,
-        WIFI_PASS: pass,
-        TOKEN: token,
-        MQTT_SERVER: server,
-        MQTT_PORT: parseInt(port)
+        page: "setting",
+        value: {
+            ssid: ssid,
+            password: pass,
+            token: token,
+            server: server,
+            port: port
+        }
     };
 
-    if (websocket.readyState === WebSocket.OPEN) {
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(JSON.stringify(configData));
         statusMsg.innerText = "Config sent! Rebooting ESP32...";
         statusMsg.style.color = "var(--green)";
