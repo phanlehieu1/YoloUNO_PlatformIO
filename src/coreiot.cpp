@@ -85,13 +85,8 @@ void setup_coreiot(){
   //WiFi.begin(wifi_ssid, wifi_password);
   //while (WiFi.status() != WL_CONNECTED) {
   
-  // while (isWifiConnected == false) {
-  //   delay(500);
-  //   Serial.print(".");
-  // }
-
   while(1){
-    if (xSemaphoreTake(xBinarySemaphoreInternet, portMAX_DELAY)) {
+    if (xSemaphoreTake(internetSemaphore(), portMAX_DELAY)) {
       break;
     }
     delay(500);
@@ -101,13 +96,15 @@ void setup_coreiot(){
 
   Serial.println(" Connected!");
 
-  client.setServer(CORE_IOT_SERVER.c_str(), CORE_IOT_PORT.toInt());
+  AppConfig &config = appConfig();
+  client.setServer(config.coreIotServer.c_str(), config.coreIotPort.toInt());
   client.setCallback(callback);
 
 }
 
 void coreiot_task(void *pvParameters){
 
+    TempHumiMonitorContext *context = static_cast<TempHumiMonitorContext *>(pvParameters);
     setup_coreiot();
 
     while(1){
@@ -117,8 +114,9 @@ void coreiot_task(void *pvParameters){
         }
         client.loop();
 
-        // Sample payload, publish to 'v1/devices/me/telemetry'
-        String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
+        SensorData data = {0.0f, 0.0f};
+        peekLatestSensorData(context, &data, pdMS_TO_TICKS(200));
+        String payload = "{\"temperature\":" + String(data.temperature) +  ",\"humidity\":" + String(data.humidity) + "}";
         
         client.publish("v1/devices/me/telemetry", payload.c_str());
 

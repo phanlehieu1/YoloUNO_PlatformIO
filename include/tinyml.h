@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #include "dht_anomaly_model.h"
-#include "global.h"
+#include "temp_humi_monitor.h"
 
 #include <TensorFlowLite_ESP32.h>
 #include "tensorflow/lite/micro/all_ops_resolver.h"

@@ -393,9 +393,7 @@
 //       {
 //         Serial.print("STA IP address: ");
 //         Serial.println(WiFi.localIP());
-//         isWifiConnected = true; // Internet access
 
-//         xSemaphoreGive(xBinarySemaphoreInternet);
 
 //         isAPMode = false;
 //         connecting = false;
@@ -406,7 +404,6 @@
 //         startAP();
 //         setupServer();
 //         connecting = false;
-//         isWifiConnected = false;
 //       }
 //     }
 

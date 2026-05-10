@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "global.h"
+#include "temp_humi_monitor.h"
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 

@@ -6,15 +6,16 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-extern float glob_temperature;
-extern float glob_humidity;
+struct AppConfig
+{
+    String wifiSsid;
+    String wifiPass;
+    String coreIotToken;
+    String coreIotServer;
+    String coreIotPort;
+};
 
-extern String WIFI_SSID;
-extern String WIFI_PASS;
-extern String CORE_IOT_TOKEN;
-extern String CORE_IOT_SERVER;
-extern String CORE_IOT_PORT;
+AppConfig &appConfig();
+SemaphoreHandle_t internetSemaphore();
 
-extern boolean isWifiConnected;
-extern SemaphoreHandle_t xBinarySemaphoreInternet;
 #endif

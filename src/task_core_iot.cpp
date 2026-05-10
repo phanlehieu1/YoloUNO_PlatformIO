@@ -83,7 +83,8 @@ void CORE_IOT_reconnect()
 {
     if (!tb.connected())
     {
-        if (!tb.connect(CORE_IOT_SERVER.c_str(), CORE_IOT_TOKEN.c_str(), CORE_IOT_PORT.toInt()))
+        AppConfig &config = appConfig();
+        if (!tb.connect(config.coreIotServer.c_str(), config.coreIotToken.c_str(), config.coreIotPort.toInt()))
         {
             // Serial.println("Failed to connect");
             return;

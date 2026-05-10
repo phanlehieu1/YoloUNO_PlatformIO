@@ -38,21 +38,21 @@ void handleWebSocketMessage(String message)
     }
     else if (doc["page"] == "setting")
     {
-        String WIFI_SSID = doc["value"]["ssid"].as<String>();
-        String WIFI_PASS = doc["value"]["password"].as<String>();
-        String CORE_IOT_TOKEN = doc["value"]["token"].as<String>();
-        String CORE_IOT_SERVER = doc["value"]["server"].as<String>();
-        String CORE_IOT_PORT = doc["value"]["port"].as<String>();
+        String wifi_ssid = doc["value"]["ssid"].as<String>();
+        String wifi_pass = doc["value"]["password"].as<String>();
+        String core_iot_token = doc["value"]["token"].as<String>();
+        String core_iot_server = doc["value"]["server"].as<String>();
+        String core_iot_port = doc["value"]["port"].as<String>();
 
         Serial.println("📥 Nhận cấu hình từ WebSocket:");
-        Serial.println("SSID: " + WIFI_SSID);
-        Serial.println("PASS: " + WIFI_PASS);
-        Serial.println("TOKEN: " + CORE_IOT_TOKEN);
-        Serial.println("SERVER: " + CORE_IOT_SERVER);
-        Serial.println("PORT: " + CORE_IOT_PORT);
+        Serial.println("SSID: " + wifi_ssid);
+        Serial.println("PASS: " + wifi_pass);
+        Serial.println("TOKEN: " + core_iot_token);
+        Serial.println("SERVER: " + core_iot_server);
+        Serial.println("PORT: " + core_iot_port);
 
         // 👉 Gọi hàm lưu cấu hình
-        Save_info_File(WIFI_SSID, WIFI_PASS, CORE_IOT_TOKEN, CORE_IOT_SERVER, CORE_IOT_PORT);
+        Save_info_File(wifi_ssid, wifi_pass, core_iot_token, core_iot_server, core_iot_port);
 
         // Phản hồi lại client (tùy chọn)
         String msg = "{\"status\":\"ok\",\"page\":\"setting_saved\"}";
