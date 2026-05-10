@@ -66,6 +66,15 @@
                     Latency: <span id="tinyml-infer" style="color: #fff; font-weight: bold;">--</span> ms
                 </div>
             </div>
+            
+            <!-- Device Control -->
+            <div class="panel state-card" style="width: 100%;">
+                <div class="card-eyebrow">Manual Device Control</div>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+                    <button class="btn btn-save" id="btn-dev1" style="flex: 1;" onclick="toggleDevice(15, 'dev1')">Device 1 (Pin 15): OFF</button>
+                    <button class="btn btn-save" id="btn-dev2" style="flex: 1;" onclick="toggleDevice(16, 'dev2')">Device 2 (Pin 16): OFF</button>
+                </div>
+            </div>
         </div>
     </div>
 

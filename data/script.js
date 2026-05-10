@@ -96,6 +96,29 @@ function switchTab(tabId) {
     event.target.classList.add('active');
 }
 
+let deviceStates = { dev1: false, dev2: false };
+
+function toggleDevice(gpio, devId) {
+    deviceStates[devId] = !deviceStates[devId];
+    let statusStr = deviceStates[devId] ? "ON" : "OFF";
+    
+    let btn = document.getElementById('btn-' + devId);
+    btn.innerText = `Device ${devId === 'dev1' ? '1 (Pin 15)' : '2 (Pin 16)'}: ${statusStr}`;
+    btn.style.background = deviceStates[devId] ? "var(--green)" : "var(--panel)";
+
+    let controlData = {
+        page: "device",
+        value: {
+            gpio: gpio,
+            status: statusStr
+        }
+    };
+
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify(controlData));
+    }
+}
+
 function saveSettings() {
     let ssid = document.getElementById('wifi_ssid').value;
     let pass = document.getElementById('wifi_pass').value;
