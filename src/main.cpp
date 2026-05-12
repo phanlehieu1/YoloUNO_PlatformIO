@@ -27,6 +27,9 @@ void startActuatorServices() {
   WiFi.setAutoReconnect(true);
   WiFi.begin(config.wifiSsid.c_str(), config.wifiPass.c_str());
   Serial.printf("[Setup] Actuator STA connecting to %s\n", config.wifiSsid.c_str());
+
+  Webserver_reconnect();
+  Serial.println("[Setup] Actuator Web Server is READY for OTA.");
 }
 #else
 void startCommonServices() {
@@ -50,6 +53,7 @@ void setup()
   Serial.begin(115200);
   delay(1500);
   Serial.println("[Setup] Boot start");
+  Serial.printf("[Setup] Firmware Version: %s\n", getFirmwareVersion().c_str());
 
 #if defined(DEVICE_ROLE_ACTUATOR)
   startActuatorServices();
@@ -71,6 +75,7 @@ void loop()
 {
 #if defined(DEVICE_ROLE_ACTUATOR)
   Wifi_reconnect();
+  Webserver_reconnect();
 #else
   if (hasWifiCredentials()) {
     Wifi_reconnect();

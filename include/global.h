@@ -75,6 +75,8 @@ SemaphoreHandle_t deviceConfigMutex();
 DeviceConfig getDeviceConfig(TickType_t waitTicks = portMAX_DELAY);
 void         setDeviceConfig(const DeviceConfig &config, TickType_t waitTicks = portMAX_DELAY);
 bool         hasWifiCredentials();
+String       getFirmwareVersion();
+
 
 // --- Sensor data helpers ---
 bool readLatestSensorData(SensorData *data, TickType_t waitTicks = 0);

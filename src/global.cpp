@@ -160,6 +160,10 @@ bool hasWifiCredentials() {
   return !config.wifiSsid.isEmpty() || !config.wifiPass.isEmpty();
 }
 
+String getFirmwareVersion() {
+  return "fw_v2"; // Task 1 Web OTA Version
+}
+
 // ============================================================
 //  LCD display state helpers (Task 3)
 // ============================================================
