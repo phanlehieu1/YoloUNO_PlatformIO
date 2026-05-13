@@ -54,6 +54,7 @@ void setup()
   delay(1500);
   Serial.println("[Setup] Boot start");
   Serial.printf("[Setup] Firmware Version: %s\n", getFirmwareVersion().c_str());
+  Serial.printf("[Setup] TinyML Model Version: %s\n", getTinyMLModelVersion());
 
 #if defined(DEVICE_ROLE_ACTUATOR)
   startActuatorServices();

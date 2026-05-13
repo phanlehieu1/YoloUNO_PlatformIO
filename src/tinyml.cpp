@@ -45,6 +45,7 @@ TfLiteTensor *&outputTensor() {
 
 constexpr int kTensorArenaSize = 8 * 1024;
 constexpr float kAnomalyThreshold = 0.5f;
+constexpr char kModelVersion[] = "tinyml_dht_v1";
 
 uint8_t *tensorArena() {
     static uint8_t arena[kTensorArenaSize];
@@ -53,11 +54,12 @@ uint8_t *tensorArena() {
 
 // --- TinyML state (shared with other tasks via getTinyMLState) ---
 TinyMLState gTinyMLState = {
-    false,   // isInitialized
-    false,   // hasValidInput
-    false,   // isAnomaly
-    0.0f,    // lastScore
-    0        // lastInferenceMs
+    false,            // isInitialized
+    false,            // hasValidInput
+    false,            // isAnomaly
+    0.0f,             // lastScore
+    kAnomalyThreshold,// threshold
+    0                 // lastInferenceMs
 };
 
 void updateTinyMLState(bool isInit, bool validInput, bool anomaly, float score, uint32_t inferMs) {
@@ -65,6 +67,7 @@ void updateTinyMLState(bool isInit, bool validInput, bool anomaly, float score, 
     gTinyMLState.hasValidInput   = validInput;
     gTinyMLState.isAnomaly       = anomaly;
     gTinyMLState.lastScore       = score;
+    gTinyMLState.threshold       = kAnomalyThreshold;
     gTinyMLState.lastInferenceMs = inferMs;
 }
 
@@ -81,6 +84,14 @@ bool hasValidSensorInput(const SensorData &sensorData) {
 
 TinyMLState getTinyMLState() {
     return gTinyMLState;
+}
+
+const char *getTinyMLModelVersion() {
+    return kModelVersion;
+}
+
+float getTinyMLAnomalyThreshold() {
+    return kAnomalyThreshold;
 }
 
 void setupTinyML() {

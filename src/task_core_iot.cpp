@@ -143,12 +143,17 @@ void publishSensorTelemetry(ThingsBoard &tb) {
     tb.sendTelemetryData("humidity", data.humidity);
     tb.sendTelemetryData("anomaly_score", mlState.lastScore);
     tb.sendTelemetryData("is_anomaly", mlState.isAnomaly);
+    tb.sendTelemetryData("model_version", getTinyMLModelVersion());
+    tb.sendTelemetryData("threshold", mlState.threshold);
+    tb.sendTelemetryData("infer_ms", static_cast<int>(mlState.lastInferenceMs));
+    tb.sendTelemetryData("device_role", "sensor");
     tb.sendTelemetryData("lat", 10.772175109674038);
     tb.sendTelemetryData("long", 106.65789107082472);
 
-    Serial.printf("[CoreIOT] Published -> T:%.1f, H:%.1f, Score:%.4f, Anomaly:%s\n",
+    Serial.printf("[CoreIOT] Published -> T:%.1f, H:%.1f, Score:%.4f, Anomaly:%s, Model:%s, Threshold:%.2f\n",
                   data.temperature, data.humidity, mlState.lastScore,
-                  mlState.isAnomaly ? "YES" : "NO");
+                  mlState.isAnomaly ? "YES" : "NO",
+                  getTinyMLModelVersion(), mlState.threshold);
 }
 #endif
 } // namespace

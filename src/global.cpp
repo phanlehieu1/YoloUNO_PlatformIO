@@ -161,7 +161,7 @@ bool hasWifiCredentials() {
 }
 
 String getFirmwareVersion() {
-  return "fw_v2"; // Task 1 Web OTA Version
+  return "sensor_fw_tinyml_meta_v1";
 }
 
 // ============================================================

@@ -17,10 +17,11 @@
 //  TinyML anomaly detection state — shared with other tasks
 // ============================================================
 struct TinyMLState {
-    bool isInitialized;      // TF Lite engine ready?
-    bool hasValidInput;      // Last sensor reading was valid?
-    bool isAnomaly;          // Anomaly detected?
-    float lastScore;         // Raw anomaly score (0.0–1.0)
+    bool isInitialized;       // TF Lite engine ready?
+    bool hasValidInput;       // Last sensor reading was valid?
+    bool isAnomaly;           // Anomaly detected?
+    float lastScore;          // Raw anomaly score (0.0–1.0)
+    float threshold;          // Active anomaly threshold
     uint32_t lastInferenceMs; // Inference duration in milliseconds
 };
 
@@ -29,5 +30,7 @@ void tiny_ml_task(void *pvParameters);
 
 // Thread-safe getter for the latest TinyML state
 TinyMLState getTinyMLState();
+const char *getTinyMLModelVersion();
+float getTinyMLAnomalyThreshold();
 
 #endif
