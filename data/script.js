@@ -1,6 +1,8 @@
 const TOTAL_DASH = 330;
+const RETRAIN_SERVER_URL = "http://127.0.0.1:8765";
 let gateway = `ws://${window.location.hostname}/ws`;
 let websocket;
+let retrainStatusPoller;
 
 window.addEventListener('load', onLoad);
 
@@ -75,7 +77,7 @@ function onMessage(event) {
         let el = document.getElementById('tinyml-status');
         document.getElementById('tinyml-score').innerText = parseFloat(data.tinyml_score).toFixed(4);
         document.getElementById('tinyml-infer').innerText = data.tinyml_infer_ms;
-        
+
         if (data.tinyml_anomaly) {
             el.innerText = "ANOMALY ⚠️";
             el.style.color = "var(--red)";
@@ -86,7 +88,91 @@ function onMessage(event) {
             el.style.textShadow = "0 0 10px rgba(46, 160, 67, 0.5)";
         }
     }
+
+    if (data.page === "retrain_status") {
+        updateRetrainStatus(data.status || "unknown", data.detail || "", data.current_step || "");
+    }
 }
+
+function retrainStatusColor(statusText) {
+    if (statusText === "accepted" || statusText === "running" || statusText === "queued") {
+        return "var(--cyan)";
+    }
+    if (statusText === "succeeded") {
+        return "var(--green)";
+    }
+    if (statusText === "busy") {
+        return "var(--orange)";
+    }
+    if (statusText === "failed" || statusText === "error") {
+        return "var(--red)";
+    }
+    return "var(--muted)";
+}
+
+function updateRetrainStatus(statusText, detailText = "", currentStep = "") {
+    let statusEl = document.getElementById('retrain-status');
+    let detailPart = detailText ? ` - ${detailText}` : "";
+    let stepPart = currentStep ? ` [${currentStep}]` : "";
+    statusEl.innerText = `Status: ${statusText}${stepPart}${detailPart}`;
+    statusEl.style.color = retrainStatusColor(statusText);
+}
+
+async function fetchRetrainStatus() {
+    try {
+        const response = await fetch(`${RETRAIN_SERVER_URL}/status`);
+        if (!response.ok) {
+            throw new Error(`http_${response.status}`);
+        }
+        const status = await response.json();
+        updateRetrainStatus(status.status || "unknown", status.error || "", status.current_step || "");
+
+        if (status.status === "queued" || status.status === "running") {
+            if (!retrainStatusPoller) {
+                retrainStatusPoller = setTimeout(() => {
+                    retrainStatusPoller = null;
+                    fetchRetrainStatus();
+                }, 2000);
+            }
+        }
+    } catch (error) {
+        updateRetrainStatus("error", "worker_unreachable");
+    }
+}
+
+async function requestRetrain() {
+    const rawInput = document.getElementById('retrain-raw-input').value.trim();
+
+    if (!rawInput) {
+        updateRetrainStatus("error", "missing_dataset_path");
+        return;
+    }
+
+    updateRetrainStatus("sending", "start_request");
+
+    try {
+        const response = await fetch(`${RETRAIN_SERVER_URL}/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ raw_input: rawInput })
+        });
+        const payload = await response.json();
+        updateRetrainStatus(payload.status || "unknown", payload.detail || "", payload.job?.current_step || "");
+        if (payload.status === "accepted" || payload.status === "busy") {
+            if (retrainStatusPoller) {
+                clearTimeout(retrainStatusPoller);
+                retrainStatusPoller = null;
+            }
+            fetchRetrainStatus();
+        }
+    } catch (error) {
+        updateRetrainStatus("error", "worker_unreachable");
+    }
+}
+
+fetchRetrainStatus();
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));

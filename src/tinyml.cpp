@@ -45,7 +45,7 @@ TfLiteTensor *&outputTensor() {
 
 constexpr int kTensorArenaSize = 8 * 1024;
 constexpr float kAnomalyThreshold = 0.5f;
-constexpr char kModelVersion[] = "tinyml_dht_v1";
+constexpr char kModelVersion[] = "tinyml_dht_v2";
 
 uint8_t *tensorArena() {
     static uint8_t arena[kTensorArenaSize];

@@ -38,6 +38,8 @@ h1 { color: var(--blue); text-transform: uppercase; letter-spacing: 2px; }
     border-radius: 8px; margin: 0 5px; transition: 0.3s;
 }
 .tab-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.tab-btn-ota { background: linear-gradient(135deg, #1d4ed8, #3b82f6) !important; color: #fff !important; border-color: #3b82f6 !important; }
+.tab-btn-ota:hover { box-shadow: 0 0 16px rgba(59, 130, 246, 0.55); transform: translateY(-1px); }
 .tab-content { display: none; }
 .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
 

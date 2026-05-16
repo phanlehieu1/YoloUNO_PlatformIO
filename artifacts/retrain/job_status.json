@@ -1,0 +1,12 @@
+{
+  "status": "succeeded",
+  "current_step": "done",
+  "raw_input": "C:\\Users\\tam\\Documents\\GitHub\\TinyML_ESP32\\sensor_data.csv",
+  "normalized_csv": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\normalized.csv",
+  "prepared_dir": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\dataset",
+  "model_path": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\tinyml_model.keras",
+  "metrics_path": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\metrics.json",
+  "header_path": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\dht_anomaly_model.h",
+  "suggested_model_version": "tinyml_dht_v2",
+  "status_path": "C:\\Users\\tam\\Documents\\GitHub\\YoloUNO_PlatformIO\\artifacts\\retrain\\job_status.json"
+}

@@ -21,6 +21,8 @@ void startActuatorServices() {
   config.wifiSsid = String(DEVICE_WIFI_SSID);
   config.wifiPass = String(DEVICE_WIFI_PASS);
   config.coreIotToken = String(DEVICE_CORE_IOT_TOKEN);
+  config.coreIotServer = String(DEVICE_CORE_IOT_SERVER);
+  config.coreIotPort = String(DEVICE_CORE_IOT_PORT);
   setDeviceConfig(config);
 
   WiFi.mode(WIFI_STA);
@@ -84,3 +86,4 @@ void loop()
   Webserver_reconnect();
 #endif
 }
+

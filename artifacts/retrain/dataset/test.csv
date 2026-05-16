@@ -1,0 +1,7 @@
+temp,humidity,label,model_version,timestamp,device_id
+26.0,65.0,0,baseline_teacher_csv,baseline_5,local_seed
+26.0,65.0,0,baseline_teacher_csv,baseline_15,local_seed
+25.0,60.0,0,baseline_teacher_csv,baseline_16,local_seed
+25.0,63.0,0,baseline_teacher_csv,baseline_18,local_seed
+24.0,62.0,0,baseline_teacher_csv,baseline_2,local_seed
+25.0,63.0,0,baseline_teacher_csv,baseline_8,local_seed

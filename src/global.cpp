@@ -161,7 +161,7 @@ bool hasWifiCredentials() {
 }
 
 String getFirmwareVersion() {
-  return "sensor_fw_tinyml_meta_v1";
+  return "sensor_fw_tinyml_baseline_v2";
 }
 
 // ============================================================

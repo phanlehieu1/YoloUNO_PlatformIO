@@ -58,7 +58,7 @@ void temp_humi_monitor(void *pvParameters) {
     StaticJsonDocument<128> doc;
     doc["temperature"] = data.temperature;
     doc["humidity"] = data.humidity;
-    doc["lcd_state"] = stateLabel(state);
+    doc["lcd_state"] = String("V2 - ") + stateLabel(state);
     
     String jsonString;
     serializeJson(doc, jsonString);

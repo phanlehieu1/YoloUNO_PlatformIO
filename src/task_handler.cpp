@@ -1,8 +1,35 @@
 #include <task_handler.h>
 #include <task_webserver.h>
+#include <Adafruit_NeoPixel.h>
 
 namespace {
 constexpr int kDefaultActuatorGpio = 48;
+constexpr uint8_t kActuatorPixelCount = 1;
+constexpr uint8_t kActuatorBrightness = 50;
+
+Adafruit_NeoPixel &actuatorPixels() {
+    static Adafruit_NeoPixel pixels(kActuatorPixelCount, kDefaultActuatorGpio, NEO_GRB + NEO_KHZ800);
+    return pixels;
+}
+
+void ensureActuatorPixelsReady() {
+    static bool initialized = false;
+    if (initialized) {
+        return;
+    }
+
+    actuatorPixels().begin();
+    actuatorPixels().setBrightness(kActuatorBrightness);
+    actuatorPixels().setPixelColor(0, actuatorPixels().Color(0, 0, 0));
+    actuatorPixels().show();
+    initialized = true;
+}
+
+void setActuatorPixelColor(uint8_t red, uint8_t green, uint8_t blue) {
+    ensureActuatorPixelsReady();
+    actuatorPixels().setPixelColor(0, actuatorPixels().Color(red, green, blue));
+    actuatorPixels().show();
+}
 
 String normalizeStatus(String status) {
     status.trim();
@@ -86,18 +113,22 @@ int rpcParamToGpio(const JsonVariantConst &data) {
 bool applyDevicePowerCommand(int gpio, const String &status)
 {
     Serial.printf("⚙️ Điều khiển GPIO %d → %s\n", gpio, status.c_str());
-    pinMode(gpio, OUTPUT);
+
+    if (gpio != kDefaultActuatorGpio) {
+        Serial.printf("⚠️ GPIO %d không hỗ trợ trên actuator NeoPixel hiện tại\n", gpio);
+        return false;
+    }
 
     if (status.equalsIgnoreCase("ON"))
     {
-        digitalWrite(gpio, HIGH);
+        setActuatorPixelColor(255, 0, 0);
         Serial.printf("🔆 GPIO %d ON\n", gpio);
         return true;
     }
 
     if (status.equalsIgnoreCase("OFF"))
     {
-        digitalWrite(gpio, LOW);
+        setActuatorPixelColor(0, 0, 0);
         Serial.printf("💤 GPIO %d OFF\n", gpio);
         return true;
     }
@@ -170,5 +201,29 @@ void handleWebSocketMessage(String message)
 
         String msg = "{\"status\":\"ok\",\"page\":\"setting_saved\"}";
         Webserver_sendata(msg);
+    }
+    else if (doc["page"] == "retrain")
+    {
+        String action = value["action"].as<String>();
+        String dataset = value["dataset"].as<String>();
+
+        Serial.println("[TinyML] Retrain request received from dashboard.");
+        Serial.println("[TinyML] Action: " + action);
+        Serial.println("[TinyML] Dataset: " + dataset);
+
+        StaticJsonDocument<192> response;
+        response["page"] = "retrain_status";
+
+        if (action != "start") {
+            response["status"] = "error";
+            response["detail"] = "unsupported_action";
+        } else {
+            response["status"] = "accepted";
+            response["detail"] = "worker_required";
+        }
+
+        String jsonString;
+        serializeJson(response, jsonString);
+        Webserver_sendata(jsonString);
     }
 }
